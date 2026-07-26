@@ -8,7 +8,7 @@
     supabaseUrl: 'https://jdthhrqokvaflenuecsi.supabase.co',
 
     // Tempel Publishable Key terbaru dari Supabase
-    supabaseAnonKey: 'TEMPEL_PUBLISHABLE_KEY_DI_SINI',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkdGhocnFva3ZhZmxlbnVlY3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MTI5OTEsImV4cCI6MjEwMDQ4ODk5MX0.I_T52YUmUpsIwM3B_MHx3J6_mZtXX5VvkKbeKBib3Yk',
 
     storageBucket: 'ogdc-evidence',
     signedUrlSeconds: 3600,
