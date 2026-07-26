@@ -3,7 +3,7 @@ window.OGDC_CONFIG = Object.freeze({
 
   supabaseUrl: 'https://jdthhrqokvaflenuecsi.supabase.co',
 
-  supabaseAnonKey: 'ANON_KEY_YANG_SUDAH_ADA',
+  supabaseAnonKey: 'ANON_KEY_YANG_SUDAH_DIPASANG',
 
   storageBucket: 'ogdc-evidence',
   signedUrlSeconds: 3600,
