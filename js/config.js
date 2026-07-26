@@ -1,12 +1,19 @@
-window.OGDC_CONFIG = Object.freeze({
-  appName: 'Inventory OGDC',
+(function () {
+  'use strict';
 
-  supabaseUrl: 'https://jdthhrqokvaflenuecsi.supabase.co',
+  window.OGDC_CONFIG = Object.freeze({
+    appName: 'Inventory OGDC',
 
-  supabaseAnonKey: 'ANON_KEY_YANG_SUDAH_DIPASANG',
+    // Gunakan Project URL, bukan URL /rest/v1/
+    supabaseUrl: 'https://jdthhrqokvaflenuecsi.supabase.co',
 
-  storageBucket: 'ogdc-evidence',
-  signedUrlSeconds: 3600,
+    // Tempel Publishable Key terbaru dari Supabase
+    supabaseAnonKey: 'TEMPEL_PUBLISHABLE_KEY_DI_SINI',
 
-  usernameEmailDomain: 'ogdc.local'
-});
+    storageBucket: 'ogdc-evidence',
+    signedUrlSeconds: 3600,
+
+    // admin akan otomatis menjadi admin@ogdc.local
+    usernameEmailDomain: 'ogdc.local'
+  });
+})();
