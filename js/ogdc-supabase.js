@@ -1,3 +1,15 @@
+/**
+ * INVENTORY OGDC — SUPABASE ADAPTER
+ * Version: V22.5 FULL LOGIN FIX
+ *
+ * File ini menggantikan koneksi google.script.run dengan Supabase.
+ * Login yang diketik sebagai username, misalnya ADMIN atau EON,
+ * otomatis dikonversi menjadi admin@ogdc.local atau eon@ogdc.local.
+ *
+ * WAJIB dimuat setelah:
+ * 1. https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
+ * 2. js/config.js
+ */
 (function () {
   'use strict';
 
@@ -40,6 +52,31 @@
     return error.message || error.details || error.hint || String(error);
   }
 
+  function authErrorText(error, email) {
+    var message = errorText(error);
+    var lower = message.toLowerCase();
+
+    if (lower.indexOf('invalid login credentials') >= 0) {
+      return 'Login gagal. Akun Authentication ' + email +
+        ' belum dibuat atau password salah. Buat akun di Supabase > Authentication > Users, bukan hanya di Table Editor.';
+    }
+
+    if (lower.indexOf('email not confirmed') >= 0) {
+      return 'Login gagal. Akun ' + email +
+        ' belum dikonfirmasi. Buka Supabase > Authentication > Users lalu pastikan akun sudah Confirmed.';
+    }
+
+    if (lower.indexOf('user not found') >= 0) {
+      return 'Login gagal. Akun Authentication ' + email + ' tidak ditemukan.';
+    }
+
+    if (lower.indexOf('fetch') >= 0 || lower.indexOf('network') >= 0) {
+      return 'Login gagal karena koneksi ke Supabase terputus. Periksa internet lalu muat ulang halaman.';
+    }
+
+    return 'Login gagal: ' + message;
+  }
+
   function uuid() {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
       return window.crypto.randomUUID();
@@ -60,8 +97,17 @@
 
   function usernameToEmail(username) {
     var value = clean(username).toLowerCase();
+    if (!value) return '';
+
+    // Bila pengguna sudah mengetik email lengkap, gunakan apa adanya.
     if (value.indexOf('@') >= 0) return value;
-    var domain = clean(config.usernameEmailDomain || 'ogdc.local').replace(/^@/, '');
+
+    var domain = clean(config.usernameEmailDomain || 'ogdc.local')
+      .toLowerCase()
+      .replace(/^@+/, '')
+      .replace(/\s+/g, '');
+
+    if (!domain) domain = 'ogdc.local';
     return value + '@' + domain;
   }
 
@@ -74,16 +120,25 @@
   }
 
   async function fetchProfile(authUser) {
-    if (!authUser || !authUser.id) return null;
+    if (!authUser || !authUser.id) {
+      throw new Error('Data pengguna Supabase tidak tersedia.');
+    }
 
     var profileResult = await client
       .from('profiles')
       .select('id, username, display_name, role, vendor_id, status')
       .eq('id', authUser.id)
-      .single();
+      .maybeSingle();
 
     if (profileResult.error) {
-      throw new Error('Profil user belum tersedia: ' + errorText(profileResult.error));
+      throw new Error('Gagal membaca public.profiles: ' + errorText(profileResult.error));
+    }
+
+    if (!profileResult.data) {
+      throw new Error(
+        'Akun Authentication berhasil, tetapi profil belum tersedia di public.profiles. ' +
+        'Jalankan SQL penghubung profil untuk ' + clean(authUser.email) + '.'
+      );
     }
 
     var profile = profileResult.data || {};
@@ -351,23 +406,41 @@
   }
 
   async function login(username, password) {
-    var email = usernameToEmail(username);
-    if (!clean(username) || !clean(password)) {
+    var rawUsername = clean(username);
+    var rawPassword = clean(password);
+    var email = usernameToEmail(rawUsername);
+
+    if (!rawUsername || !rawPassword) {
       throw new Error('Username dan password wajib diisi.');
     }
 
+    if (!email) {
+      throw new Error('Username tidak valid.');
+    }
+
+    console.info('[OGDC LOGIN] Username dikonversi menjadi:', email);
+
     var result = await client.auth.signInWithPassword({
       email: email,
-      password: password
+      password: rawPassword
     });
 
     if (result.error) {
-      throw new Error('Login gagal: ' + errorText(result.error));
+      throw new Error(authErrorText(result.error, email));
+    }
+
+    if (!result.data || !result.data.user || !result.data.session) {
+      throw new Error('Supabase tidak mengirim sesi login. Silakan coba kembali.');
     }
 
     try {
       var user = await fetchProfile(result.data.user);
-      return { success: true, message: 'Login berhasil', user: user };
+      user.session_token = result.data.session.access_token || user.session_token || '';
+      return {
+        success: true,
+        message: 'Login berhasil sebagai ' + (user.display_name || user.username || rawUsername) + '.',
+        user: user
+      };
     } catch (error) {
       await client.auth.signOut();
       throw error;
@@ -530,10 +603,14 @@
 
   window.OGDC_SUPABASE_CLIENT = client;
   window.OGDC_API = Object.freeze({
+    version: 'V22.5-FULL-LOGIN-FIX',
     call: dispatch,
     restoreSession: restoreSession,
     signOut: signOut,
     signedUrl: signedUrl,
+    usernameToEmail: usernameToEmail,
     client: client
   });
+
+  console.info('[OGDC] Supabase adapter aktif:', window.OGDC_API.version);
 })();
