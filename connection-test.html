@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OGDC Supabase Connection Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/ogdc-supabase.js"></script>
+  <style>
+    body{margin:0;background:#eef3f8;color:#102238;font-family:Arial,sans-serif;padding:24px}
+    .box{max-width:760px;margin:auto;background:#fff;border:1px solid #dbe4ef;border-radius:16px;padding:22px;box-shadow:0 15px 45px rgba(15,23,42,.1)}
+    input,button{font:inherit;padding:11px;border-radius:9px;border:1px solid #cbd5e1}
+    input{width:100%;box-sizing:border-box;margin:5px 0 12px}button{cursor:pointer;font-weight:700;margin:5px;background:#2563eb;color:#fff;border:0}
+    pre{white-space:pre-wrap;word-break:break-word;background:#0f172a;color:#dbeafe;padding:14px;border-radius:10px;min-height:100px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>OGDC Supabase Connection Test</h1>
+    <p>Gunakan halaman ini untuk memastikan koneksi, login, profile, dan RPC sudah bekerja sebelum membuka aplikasi utama.</p>
+    <button onclick="ping()">1. Test Koneksi</button>
+    <hr>
+    <label>Username / Email</label>
+    <input id="user" value="admin">
+    <label>Password</label>
+    <input id="pass" type="password">
+    <button onclick="login()">2. Login</button>
+    <button onclick="initial()">3. Test Initial Data</button>
+    <button onclick="logout()">Logout</button>
+    <pre id="out">Menunggu pengujian...</pre>
+  </div>
+  <script>
+    const out=document.getElementById('out');
+    const show=v=>out.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);
+    async function ping(){try{show(await OGDC_API.call('apiPing',[]));}catch(e){show(e.message||String(e));}}
+    async function login(){try{show(await OGDC_API.call('apiLogin',[document.getElementById('user').value,document.getElementById('pass').value]));}catch(e){show(e.message||String(e));}}
+    async function initial(){try{show(await OGDC_API.call('apiGetInitialData',[]));}catch(e){show(e.message||String(e));}}
+    async function logout(){try{await OGDC_API.signOut();show('Logout berhasil.');}catch(e){show(e.message||String(e));}}
+  </script>
+</body>
+</html>
